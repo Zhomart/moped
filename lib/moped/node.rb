@@ -137,7 +137,7 @@ module Moped
     #
     # @since 1.2.0
     def disconnect
-      connection{ |conn| conn.disconnect }
+      connection{ |conn| conn.disconnect } if address.resolved
       true
     end
 
@@ -175,9 +175,9 @@ module Moped
 
       begin
         connection do |conn|
-          stack(:connection) << conn
-          connect(conn) unless conn.connected?
+          connect(conn) unless conn.alive?
           conn.apply_credentials(@credentials)
+          stack(:connection) << conn
           yield(conn)
         end
       rescue Exception => e
@@ -566,7 +566,7 @@ module Moped
       nodes.flatten.compact.each do |peer|
         node = Node.new(peer, options)
         node.credentials.merge!(@credentials)
-        peers.push(node)
+        peers.push(node) unless peers.include?(node)
       end
     end
 
